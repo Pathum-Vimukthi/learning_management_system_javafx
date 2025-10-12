@@ -1,7 +1,6 @@
 package com.pathum.lms.controller;
 
 import com.pathum.lms.env.StaticResource;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -12,26 +11,18 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.URL;
 
-public class WelcomeScreenFormController {
-    public Label lblVersion;
-    public Label lblCompany;
+public class DashboardFormController {
     public AnchorPane context;
+    public Label lblCompany;
+    public Label lblVersion;
 
     public void initialize() {
         setStaticData();
     }
 
     private void setStaticData() {
-        lblVersion.setText(StaticResource.getVersion());
         lblCompany.setText(StaticResource.getCompany());
-    }
-
-    public void navigateLoginFormOnAction(ActionEvent actionEvent) throws IOException {
-        setUi("LoginForm");
-    }
-
-    public void navigateSignUpFormOnAction(ActionEvent actionEvent) throws IOException {
-        setUi("SignUpForm");
+        lblVersion.setText(StaticResource.getVersion());
     }
 
     private void setUi(String location) throws IOException {
