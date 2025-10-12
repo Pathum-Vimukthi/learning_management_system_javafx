@@ -12,26 +12,30 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.URL;
 
-public class WelcomeScreenFormController {
-    public Label lblVersion;
-    public Label lblCompany;
+public class SignUpFormController {
     public AnchorPane context;
+    public Label lblCompany;
+    public Label lblVersion;
 
     public void initialize() {
         setStaticData();
     }
 
     private void setStaticData() {
-        lblVersion.setText(StaticResource.getVersion());
         lblCompany.setText(StaticResource.getCompany());
+        lblVersion.setText(StaticResource.getVersion());
     }
 
-    public void navigateLoginFormOnAction(ActionEvent actionEvent) throws IOException {
+    public void backToHomeOnAction(ActionEvent actionEvent) throws IOException {
+        setUi("WelcomeScreenForm");
+    }
+
+    public void signUpOnAction(ActionEvent actionEvent) throws IOException {
         setUi("LoginForm");
     }
 
-    public void navigateSignUpFormOnAction(ActionEvent actionEvent) throws IOException {
-        setUi("SignUpForm");
+    public void alreadyHaveAnAccountOnAction(ActionEvent actionEvent) throws IOException {
+        setUi("LoginForm");
     }
 
     private void setUi(String location) throws IOException {
