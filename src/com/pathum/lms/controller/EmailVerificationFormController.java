@@ -15,12 +15,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-
-//import javax.mail.Message;
-//import javax.mail.Session;
-//import javax.mail.Transport;
-//import javax.mail.internet.InternetAddress;
-//import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
@@ -31,6 +25,7 @@ public class EmailVerificationFormController {
     public Label lblCompany;
     public Label lblVersion;
     public TextField txtEmail;
+    private int generatedOTP;
 
     public void initialize() {
         setStaticData();
@@ -48,6 +43,10 @@ public class EmailVerificationFormController {
             final String toEmail = txtEmail.getText();
             Optional<User> selectedUser = Database.userTable.stream().filter(user -> user.getEmail().equals(toEmail)).findFirst();
             if (selectedUser.isPresent()) {
+
+                int otp = new VerificationCodeGenerator().getCode(4);
+                this.generatedOTP = otp;
+
                 Properties properties = new Properties();
                 properties.put("mail.smtp.host", "smtp.gmail.com");
                 properties.put("mail.smtp.auth", "true");
@@ -64,28 +63,23 @@ public class EmailVerificationFormController {
                 message.setFrom(new InternetAddress(fromEmail));
                 message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
                 message.setSubject("Email Verification Code");
-                message.setText("Your OTP is: " + new VerificationCodeGenerator().getCode(4));
+                message.setText("Your OTP is: " + otp);
 
                 Transport.send(message);
                 System.out.println("OTP sent successfully to " + toEmail);
 
-//                Session session = Session.getDefaultInstance(properties,new javax.mail.Authenticator() {
-//                    protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
-//                        return new javax.mail.PasswordAuthentication(fromEmail, password);
-//                    }
-//                });
-//                Message message = new MimeMessage(session);
-//                message.setFrom(new InternetAddress(fromEmail));
-//                message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
-//                message.setSubject("Verification Code");
-//                message.setText("Verification Code is " + new VerificationCodeGenerator().getCode(4));
-//                Transport.send(message);
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/pathum/lms/view/VerifyOTPForm.fxml"));
+                Parent parent = loader.load();
+                VerifyOTPFormController controller = loader.getController();
+                controller.setVerificationData(generatedOTP, toEmail);
+                Stage stage= (Stage) context.getScene().getWindow();
+                stage.setScene(new Scene(parent));
             }
         }catch (Exception e){
             throw new RuntimeException();
         }
 
-        setUi("VerifyOTPForm");
+
     }
 
     public void backToHomeOnAction(ActionEvent actionEvent) throws IOException {
