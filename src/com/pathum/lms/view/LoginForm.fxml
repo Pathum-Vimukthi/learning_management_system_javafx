@@ -22,12 +22,12 @@
             <Font name="System Bold" size="18.0" />
          </font>
       </Label>
-      <TextField layoutX="46.0" layoutY="121.0" prefHeight="42.0" prefWidth="258.0" promptText="Email">
+      <TextField fx:id="txtEmail" layoutX="46.0" layoutY="121.0" prefHeight="42.0" prefWidth="258.0" promptText="Email">
          <font>
             <Font size="14.0" />
          </font>
       </TextField>
-      <PasswordField layoutX="47.0" layoutY="181.0" prefHeight="42.0" prefWidth="258.0" promptText="Password" />
+      <PasswordField fx:id="txtPassword" layoutX="47.0" layoutY="181.0" prefHeight="42.0" prefWidth="258.0" promptText="Password" />
       <Button layoutX="103.0" layoutY="272.0" mnemonicParsing="false" onAction="#navigateDashboardOnAction" prefHeight="42.0" prefWidth="144.0" text="Login">
          <font>
             <Font name="System Bold" size="18.0" />

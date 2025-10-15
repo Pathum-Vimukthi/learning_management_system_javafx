@@ -9,7 +9,6 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-
 <AnchorPane fx:id="context" prefHeight="400.0" prefWidth="350.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pathum.lms.controller.SignUpFormController">
    <children>
       <Button layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#backToHomeOnAction" text="&lt; Back to Home">
@@ -23,12 +22,12 @@
             <Font name="System Bold" size="18.0" />
          </font>
       </Label>
-      <TextField layoutX="47.0" layoutY="91.0" prefHeight="42.0" prefWidth="258.0" promptText="Name">
+      <TextField fx:id="txtFullName" layoutX="47.0" layoutY="91.0" prefHeight="42.0" prefWidth="258.0" promptText="Name">
          <font>
             <Font size="14.0" />
          </font>
       </TextField>
-      <PasswordField layoutX="47.0" layoutY="241.0" prefHeight="42.0" prefWidth="258.0" promptText="Password" />
+      <PasswordField fx:id="txtPassword" layoutX="47.0" layoutY="241.0" prefHeight="42.0" prefWidth="258.0" promptText="Password" />
       <Button layoutX="104.0" layoutY="321.0" mnemonicParsing="false" onAction="#signUpOnAction" prefHeight="42.0" prefWidth="144.0" text="Sign-up">
          <font>
             <Font name="System Bold" size="18.0" />
@@ -37,12 +36,12 @@
       <Label fx:id="lblCompany" layoutX="14.0" layoutY="364.0" prefHeight="23.0" prefWidth="71.0" text="Label" textAlignment="CENTER" />
       <Label fx:id="lblVersion" layoutX="268.0" layoutY="364.0" prefHeight="23.0" prefWidth="71.0" text="Label" textAlignment="CENTER" />
       <Hyperlink layoutX="167.0" layoutY="288.0" onAction="#alreadyHaveAnAccountOnAction" text="Already have an account" underline="true" />
-      <TextField layoutX="47.0" layoutY="191.0" prefHeight="42.0" prefWidth="258.0" promptText="Email">
+      <TextField fx:id="txtEmail" layoutX="47.0" layoutY="191.0" prefHeight="42.0" prefWidth="258.0" promptText="Email">
          <font>
             <Font size="14.0" />
          </font>
       </TextField>
-      <TextField layoutX="47.0" layoutY="141.0" prefHeight="42.0" prefWidth="258.0" promptText="Age">
+      <TextField fx:id="txtAge" layoutX="47.0" layoutY="141.0" prefHeight="42.0" prefWidth="258.0" promptText="Age">
          <font>
             <Font size="14.0" />
          </font>
