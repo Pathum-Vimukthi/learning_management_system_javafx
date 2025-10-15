@@ -21,6 +21,8 @@ public class ResetPasswordFormController {
         setStaticData();
     }
 
+    public void setUserData(String email) {}
+
     private void setStaticData() {
         lblCompany.setText(StaticResource.getCompany());
         lblVersion.setText(StaticResource.getVersion());

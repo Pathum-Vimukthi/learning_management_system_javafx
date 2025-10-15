@@ -7,7 +7,6 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-
 <AnchorPane fx:id="context" prefHeight="269.0" prefWidth="350.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pathum.lms.controller.VerifyOTPFormController">
    <children>
       <Label layoutX="97.0" layoutY="24.0" text="Validate Your OTP">
@@ -15,9 +14,9 @@
             <Font name="System Bold" size="18.0" />
          </font>
       </Label>
-      <Label layoutX="14.0" layoutY="68.0" text="Email" />
+      <Label fx:id="lblEmail" layoutX="14.0" layoutY="68.0" text="Email" />
       <Hyperlink layoutX="224.0" layoutY="65.0" onAction="#navigateEmailVerificationFormOnAction" text=" Change your email" underline="true" />
-      <TextField layoutX="45.0" layoutY="101.0" prefHeight="42.0" prefWidth="258.0" promptText="Enter Your 6 Digit OTP">
+      <TextField fx:id="txtOTP" layoutX="45.0" layoutY="101.0" prefHeight="42.0" prefWidth="258.0" promptText="Enter Your 6 Digit OTP">
          <font>
             <Font size="14.0" />
          </font>
