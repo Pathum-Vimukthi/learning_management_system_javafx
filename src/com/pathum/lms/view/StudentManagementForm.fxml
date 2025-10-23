@@ -4,6 +4,8 @@
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
@@ -22,6 +24,25 @@
       <DatePicker fx:id="dteDOB" layoutX="28.0" layoutY="111.0" promptText="Date of Birth" />
       <TextField fx:id="txtSearch" layoutX="275.0" layoutY="111.0" promptText="Search Here" />
       <Button fx:id="btnSave" layoutX="461.0" layoutY="108.0" minHeight="30.0" mnemonicParsing="false" onAction="#saveOnAction" prefHeight="10.0" prefWidth="100.0" text="Save">
+         <font>
+            <Font name="System Bold" size="14.0" />
+         </font>
+      </Button>
+      <TableView fx:id="tblStudent" layoutX="16.0" layoutY="152.0" prefHeight="232.0" prefWidth="569.0">
+        <columns>
+          <TableColumn fx:id="colId" prefWidth="73.60003662109375" text="Id" />
+          <TableColumn fx:id="colName" prefWidth="115.20001220703125" text="Name" />
+            <TableColumn fx:id="colAddress" prefWidth="160.0" text="Address" />
+            <TableColumn fx:id="colDob" minWidth="5.5999755859375" prefWidth="112.79998779296875" text="DOB" />
+            <TableColumn fx:id="colAction" prefWidth="105.5999755859375" text="Action" />
+        </columns>
+      </TableView>
+      <Button layoutX="479.0" layoutY="12.0" minHeight="30.0" mnemonicParsing="false" onAction="#newStudentOnAction" prefHeight="30.0" prefWidth="107.0" text="New Student">
+         <font>
+            <Font name="System Bold" size="14.0" />
+         </font>
+      </Button>
+      <Button layoutX="16.0" layoutY="12.0" minHeight="30.0" mnemonicParsing="false" onAction="#backToDashboardOnAction" prefHeight="10.0" prefWidth="100.0" text="Back">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>

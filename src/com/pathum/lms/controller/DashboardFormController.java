@@ -32,11 +32,11 @@ public class DashboardFormController {
         lblCompany.setText(StaticResource.getCompany());
         lblVersion.setText(StaticResource.getVersion());
         String dateFormat = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        lblDate.setText(dateFormat + " " + dateFormat);
+        lblDate.setText(dateFormat);
 
         Timeline clock = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
             String timeFormat = new SimpleDateFormat("HH:mm:ss").format(new Date());
-            lblTime.setText(timeFormat + " " + timeFormat);
+            lblTime.setText(timeFormat);
         }));
         clock.setCycleCount(Timeline.INDEFINITE);
         clock.play();
@@ -56,5 +56,18 @@ public class DashboardFormController {
 
     public void studentManageOnAction(ActionEvent actionEvent) throws IOException {
         setUi("StudentManagementForm");
+    }
+
+    public void teacherManageOnAction(ActionEvent actionEvent) throws IOException {
+        setUi("TeacherManagementForm");
+    }
+
+    public void intakeManageOnAction(ActionEvent actionEvent) {
+    }
+
+    public void programManageOnAction(ActionEvent actionEvent) {
+    }
+
+    public void studentRegistrationOnAction(ActionEvent actionEvent) {
     }
 }
