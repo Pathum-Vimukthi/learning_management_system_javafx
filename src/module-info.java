@@ -6,6 +6,8 @@ module lms {
 //    requires mail;
     requires jakarta.mail;
     requires jakarta.activation;
+    requires java.sql;
+    requires mysql.connector.j;
 
     opens com.pathum.lms to javafx.fxml, javafx.graphics, javafx.controls, jakarta.activation, jakarta.mail;
     opens com.pathum.lms.view.tm to javafx.base;
