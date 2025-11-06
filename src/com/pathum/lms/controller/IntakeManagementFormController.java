@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Optional;
 
 public class IntakeManagementFormController {
     public AnchorPane context;
@@ -50,6 +51,19 @@ public class IntakeManagementFormController {
             searchText = newValue;
             loadIntakeTableData(searchText);
         });
+        tblIntake.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+           if (newValue != null) {
+               setDataToForm((IntakeTm) newValue);
+           }
+        });
+    }
+
+    private void setDataToForm(IntakeTm newValue) {
+        txtIntakeId.setText(newValue.getIntakeId());
+        txtIntakeName.setText(newValue.getIntakeName());
+        dteStartDate.setValue(newValue.getIntakeDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        cmbIntakeProgram.setValue(newValue.getProgram());
+        btnSave.setText("Update");
     }
 
     private void loadIntakeTableData(String searchText) {
@@ -65,6 +79,15 @@ public class IntakeManagementFormController {
                         intake.getProgram(),
                         btn
                 ));
+                btn.setOnAction(event -> {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete this intake?", ButtonType.YES, ButtonType.NO);
+                    alert.showAndWait();
+                    if (alert.getResult() == ButtonType.YES) {
+                        Database.intakeTable.remove(intake);
+                        loadIntakeTableData(searchText);
+                        setIntakeId();
+                    }
+                });
             }
         }
         tblIntake.setItems(intakeList);
@@ -115,8 +138,20 @@ public class IntakeManagementFormController {
             setProgramData();
             clearFields();
             loadIntakeTableData(searchText);
+        }else {
+            Optional<Intake> selectedIntake = Database.intakeTable.stream().filter(i -> i.getIntakeId().equals(txtIntakeId.getText())).findFirst();
+            if(selectedIntake.isPresent()) {
+                selectedIntake.get().setIntakeId(txtIntakeId.getText());
+                selectedIntake.get().setIntakeName(txtIntakeName.getText());
+                selectedIntake.get().setProgram(cmbIntakeProgram.getValue());
+                selectedIntake.get().setStartDate(Date.from(dteStartDate.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+                new Alert(Alert.AlertType.INFORMATION, "Intake Updated!").show();
+                setIntakeId();
+                loadIntakeTableData(searchText);
+                clearFields();
+                btnSave.setText("Save");
+            }
         }
-
     }
 
     private void clearFields() {
