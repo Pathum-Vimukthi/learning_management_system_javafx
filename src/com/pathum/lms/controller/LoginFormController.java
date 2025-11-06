@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.*;
 import java.util.Optional;
 
 public class LoginFormController {
@@ -39,16 +40,35 @@ public class LoginFormController {
         String email = txtEmail.getText();
         String password = txtPassword.getText();
 
-        Optional<User> selectUser = Database.userTable.stream().filter(user -> user.getEmail().equals(email)).findFirst();
-        if (selectUser.isPresent()) {
-            if(new PasswordManager().checkPassword(password, selectUser.get().getPassword())) {
+        try{
+            boolean login = loginToSystem(email, password);
+            if(login){
                 new Alert(Alert.AlertType.INFORMATION,"Welcome").show();
                 setUi("DashboardForm");
+            }else{
+                new Alert(Alert.AlertType.ERROR,"Invalid User Credentials").show();
+            }
+        }catch (ClassNotFoundException | SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    private boolean loginToSystem(String email, String password) throws ClassNotFoundException, SQLException {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lms_db", "root", "1234");
+        String sql = "SELECT email, password FROM user WHERE email = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setString(1, email);
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) {
+            if(new PasswordManager().checkPassword(password, rs.getString("password"))) {
+                return true;
             }else {
-                new Alert(Alert.AlertType.ERROR,"Invalid Password").show();
+                return false;
             }
         }else {
-            new Alert(Alert.AlertType.ERROR,"User not found").show();
+            return false;
         }
     }
 

@@ -17,6 +17,10 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class SignUpFormController {
     public AnchorPane context;
@@ -47,13 +51,28 @@ public class SignUpFormController {
         String email = txtEmail.getText();
         int age = Integer.parseInt(txtAge.getText());
 
-        boolean emailExists = Database.userTable.stream().anyMatch(user -> user.getEmail().equals(email));
-        if (emailExists) {
-            new Alert(Alert.AlertType.ERROR, "This email already exists!").show();
+        User user = new User(fullName, email, password, age);
+
+        try{
+            signUp(user);
+            new Alert(Alert.AlertType.INFORMATION, "Sign up successful!").show();
+            setUi("LoginForm");
+        }catch(ClassNotFoundException | SQLException e){
+            e.printStackTrace();
         }
-        Database.userTable.add(new User(fullName, email, password, age));
-        new Alert(Alert.AlertType.INFORMATION, "Sign up successful!").show();
-        setUi("LoginForm");
+    }
+
+    private boolean signUp(User user) throws ClassNotFoundException, SQLException {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lms_db", "root", "1234");
+        String sql = "INSERT INTO user VALUES (?,?,?,?)";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setString(1, user.getEmail());
+        ps.setString(2, user.getFullName());
+        ps.setInt(3, user.getAge());
+        ps.setString(4, user.getPassword());
+
+        return ps.executeUpdate() > 0;
     }
 
     public void alreadyHaveAnAccountOnAction(ActionEvent actionEvent) throws IOException {
