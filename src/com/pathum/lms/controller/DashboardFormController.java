@@ -70,6 +70,7 @@ public class DashboardFormController {
         setUi("ProgramManagementForm");
     }
 
-    public void studentRegistrationOnAction(ActionEvent actionEvent) {
+    public void studentRegistrationOnAction(ActionEvent actionEvent) throws IOException {
+        setUi("RegistrationForm");
     }
 }
