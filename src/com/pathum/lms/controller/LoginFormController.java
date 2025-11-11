@@ -1,6 +1,7 @@
 package com.pathum.lms.controller;
 
 import com.pathum.lms.DB.Database;
+import com.pathum.lms.DB.DbConnection;
 import com.pathum.lms.env.StaticResource;
 import com.pathum.lms.model.User;
 import com.pathum.lms.utils.security.PasswordManager;
@@ -43,8 +44,13 @@ public class LoginFormController {
         try{
             boolean login = loginToSystem(email, password);
             if(login){
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/pathum/lms/view/DashboardForm.fxml"));
+                Parent load = loader.load();
+                DashboardFormController dashboardController = loader.getController();
+                dashboardController.setData(email);
+                Stage stage = (Stage) context.getScene().getWindow();
+                stage.setScene(new Scene(load));
                 new Alert(Alert.AlertType.INFORMATION,"Welcome").show();
-                setUi("DashboardForm");
             }else{
                 new Alert(Alert.AlertType.ERROR,"Invalid User Credentials").show();
             }
@@ -54,8 +60,8 @@ public class LoginFormController {
     }
 
     private boolean loginToSystem(String email, String password) throws ClassNotFoundException, SQLException {
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lms_db", "root", "1234");
+        Connection connection = DbConnection.getDbConnection().getConnection();
+
         String sql = "SELECT email, password FROM user WHERE email = ?";
         PreparedStatement ps = connection.prepareStatement(sql);
         ps.setString(1, email);

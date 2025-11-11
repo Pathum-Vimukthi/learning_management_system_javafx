@@ -1,6 +1,7 @@
 package com.pathum.lms.controller;
 
 import com.pathum.lms.DB.Database;
+import com.pathum.lms.DB.DbConnection;
 import com.pathum.lms.env.StaticResource;
 import com.pathum.lms.model.User;
 import com.pathum.lms.utils.security.PasswordManager;
@@ -63,8 +64,8 @@ public class SignUpFormController {
     }
 
     private boolean signUp(User user) throws ClassNotFoundException, SQLException {
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/lms_db", "root", "1234");
+        Connection connection = DbConnection.getDbConnection().getConnection();
+
         String sql = "INSERT INTO user VALUES (?,?,?,?)";
         PreparedStatement ps = connection.prepareStatement(sql);
         ps.setString(1, user.getEmail());
