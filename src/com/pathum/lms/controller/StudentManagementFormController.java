@@ -1,6 +1,7 @@
 package com.pathum.lms.controller;
 
 import com.pathum.lms.DB.Database;
+import com.pathum.lms.DB.DbConnection;
 import com.pathum.lms.model.Student;
 import com.pathum.lms.view.tm.StudentTm;
 import javafx.collections.FXCollections;
@@ -16,9 +17,14 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
 
@@ -37,6 +43,7 @@ public class StudentManagementFormController {
     public TableColumn<StudentTm, Date> colDob;
     public TableColumn<StudentTm, Button> colAction;
     String searchText = "";
+    String userEmail;
 
     public void initialize() {
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -68,9 +75,11 @@ public class StudentManagementFormController {
     }
 
     private void setTableData(String searchText) {
-        ObservableList<StudentTm> studentTms = FXCollections.observableArrayList();
-        for(Student student:Database.studentTable){
-            if(student.getStudentName().toLowerCase().contains(searchText.toLowerCase())){
+        try{
+            ArrayList<Student> studentsList = fetchStudentsData(searchText);
+            ObservableList<StudentTm> studentTms = FXCollections.observableArrayList();
+
+            for(Student student:studentsList){
                 Button btn = new Button("Delete");
                 StudentTm studentTm = new StudentTm(
                         student.getStudentID(),
@@ -81,33 +90,82 @@ public class StudentManagementFormController {
                 );
                 btn.setOnAction((ActionEvent event) -> {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete this student?", ButtonType.YES, ButtonType.NO);
-                    alert.showAndWait();
-                    if (alert.getResult() == ButtonType.YES) {
-                        Database.studentTable.remove(student);
-                        new Alert(Alert.AlertType.INFORMATION, "Student deleted successfully").show();
-                        setTableData(searchText);
-                        setStudentId();
-                    }
-                });
+                        alert.showAndWait();
+                        if (alert.getResult() == ButtonType.YES) {
+                            try{
+                                boolean isDelete = deleteStudent(student);
+                                if(isDelete){
+                                    new Alert(Alert.AlertType.INFORMATION, "Student deleted successfully").show();
+                                    setTableData(searchText);
+                                    setStudentId();
+                                }
+                            }catch (SQLException | ClassNotFoundException e){
+                                e.printStackTrace();
+                            }
+                        }
+                    });
                 studentTms.add(studentTm);
             }
-
+            tblStudent.setItems(studentTms);
+        }catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
-        tblStudent.setItems(studentTms);
+    }
+
+    private boolean deleteStudent(Student student) throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("DELETE FROM student WHERE id = ?");
+        ps.setString(1, student.getStudentID());
+
+        return ps.executeUpdate()>0;
+    }
+
+    private ArrayList<Student> fetchStudentsData(String searchText) throws SQLException, ClassNotFoundException {
+        ArrayList<Student> studentsList = new ArrayList<>();
+
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM student WHERE name LIKE ?");
+        ps.setString(1, "%" + searchText + "%");
+        ResultSet resultSet = ps.executeQuery();
+
+        while (resultSet.next()) {
+            studentsList.add(new Student(
+                    resultSet.getString(1),
+                    resultSet.getString(2),
+                    resultSet.getString(3),
+                    resultSet.getDate(4)
+            ));
+        }
+        return studentsList;
     }
 
     private void setStudentId() {
-        if(!Database.studentTable.isEmpty()){
-            Student lastStudent = Database.studentTable.get(Database.studentTable.size()-1);
-            String lastStudentId = lastStudent.getStudentID();
-            String[] splitData = lastStudentId.split("-");
-            String lastCharacter = splitData[1];
-            int lastDigit = Integer.parseInt(lastCharacter);
-            lastDigit++;
-            String generatedId = "S-"+lastDigit;
-            txtStudentId.setText(generatedId);
-        }else{
-            txtStudentId.setText("S-1");
+        try{
+            String lastStudentId = getLastStudent();
+
+            if(lastStudentId != null){
+                String[] splitted = lastStudentId.split("-");
+                String lastCharAsString = splitted[1];
+                int lastDigit = Integer.parseInt(lastCharAsString);
+                lastDigit++;
+                String generatedId = "S-"+lastDigit;
+                txtStudentId.setText(generatedId);
+            }else{
+                txtStudentId.setText("S-1");
+            }
+        }catch (SQLException | ClassNotFoundException e){
+            e.printStackTrace();
+        }
+    }
+
+    private String getLastStudent() throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement statement = connection.prepareStatement("SELECT id FROM student ORDER BY CAST(SUBSTRING(id,3)AS UNSIGNED) DESC LIMIT 1");
+        ResultSet set = statement.executeQuery();
+        if(set.next()){
+            return set.getString(1);
+        }else {
+            return null;
         }
     }
 
@@ -118,25 +176,52 @@ public class StudentManagementFormController {
                 txtAddress.getText(),
                 Date.from(dteDOB.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant())
         );
-        if(btnSave.getText().equals("Save")){
-            Database.studentTable.add(student);
-            setStudentId();
-            clearFields();
-            new Alert(Alert.AlertType.INFORMATION, "Student Saved!").show();
-            setTableData(searchText);
-        }else {
-            Optional<Student> selectedStudent = Database.studentTable.stream().filter(e->e.getStudentID().equals(txtStudentId.getText())).findFirst();
-            if(selectedStudent.isPresent()){
-                selectedStudent.get().setStudentName(txtStudentName.getText());
-                selectedStudent.get().setStudentAddress(txtAddress.getText());
-                selectedStudent.get().setDob(Date.from(dteDOB.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant()));
-                new Alert(Alert.AlertType.INFORMATION, "Student Updated!").show();
-                setStudentId();
-                clearFields();
-                setTableData(searchText);
-                btnSave.setText("Save");
+        try{
+            if(btnSave.getText().equals("Save")){
+                boolean isSaved = saveStudent(student, userEmail);
+                if(isSaved){
+                    setStudentId();
+                    clearFields();
+                    new Alert(Alert.AlertType.INFORMATION, "Student Saved!").show();
+                    setTableData(searchText);
+                }
+            }else {
+                boolean isUpdated = updateStudent(student, userEmail);
+                if(isUpdated){
+                    new Alert(Alert.AlertType.INFORMATION, "Student Updated!").show();
+                    setStudentId();
+                    clearFields();
+                    setTableData(searchText);
+                    btnSave.setText("Save");
+                }
             }
+        }catch (SQLException | ClassNotFoundException e){
+            e.printStackTrace();
         }
+    }
+
+    private boolean updateStudent(Student student, String userEmail) throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("UPDATE student SET name=?, address=?, dob=?, user_email=? WHERE id=?");
+        ps.setString(1, student.getStudentName());
+        ps.setString(2, student.getStudentAddress());
+        ps.setObject(3, student.getDob());
+        ps.setString(4, userEmail);
+        ps.setString(5, student.getStudentID());
+
+        return ps.executeUpdate()>0;
+    }
+
+    private boolean saveStudent(Student student, String userEmail) throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("INSERT INTO student VALUES (?,?,?,?,?)");
+        ps.setString(1, student.getStudentID());
+        ps.setString(2, student.getStudentName());
+        ps.setString(3, student.getStudentAddress());
+        ps.setObject(4, student.getDob());
+        ps.setString(5, userEmail);
+
+        return ps.executeUpdate()>0;
     }
 
     private void clearFields() {
@@ -161,5 +246,9 @@ public class StudentManagementFormController {
         Scene scene = new Scene(load);
         Stage stage = (Stage) context.getScene().getWindow();
         stage.setScene(scene);
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 }

@@ -23,6 +23,7 @@ public class DashboardFormController {
     public Label lblVersion;
     public Label lblDate;
     public Label lblTime;
+    String userEmail;
 
     public void initialize() {
         setStaticData();
@@ -55,7 +56,12 @@ public class DashboardFormController {
     }
 
     public void studentManageOnAction(ActionEvent actionEvent) throws IOException {
-        setUi("StudentManagementForm");
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/pathum/lms/view/StudentManagementForm.fxml"));
+        Parent parent = loader.load();
+        StudentManagementFormController controller = loader.getController();
+        controller.setUserEmail(userEmail);
+        Stage stage = (Stage) context.getScene().getWindow();
+        stage.setScene(new Scene(parent));
     }
 
     public void teacherManageOnAction(ActionEvent actionEvent) throws IOException {
@@ -72,5 +78,9 @@ public class DashboardFormController {
 
     public void studentRegistrationOnAction(ActionEvent actionEvent) throws IOException {
         setUi("RegistrationForm");
+    }
+
+    public void setData(String userEmail) {
+        this.userEmail = userEmail;
     }
 }
