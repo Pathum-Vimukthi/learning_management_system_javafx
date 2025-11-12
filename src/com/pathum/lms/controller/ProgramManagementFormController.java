@@ -1,6 +1,7 @@
 package com.pathum.lms.controller;
 
 import com.pathum.lms.DB.Database;
+import com.pathum.lms.DB.DbConnection;
 import com.pathum.lms.model.Modules;
 import com.pathum.lms.model.Program;
 import com.pathum.lms.model.Teacher;
@@ -19,6 +20,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -45,6 +47,7 @@ public class ProgramManagementFormController {
     ArrayList<Modules> moduleList = new ArrayList<>();
     static ObservableList<ModuleTm> mList = FXCollections.observableArrayList();
     private String searchText="";
+    public static String programIdForModules;
 
     public void initialize() {
         colModuleId.setCellValueFactory(new PropertyValueFactory<>("moduleId"));
@@ -82,42 +85,100 @@ public class ProgramManagementFormController {
     }
 
     private void setProgramTableData(String searchText) {
-        ObservableList<ProgramTm> programList = FXCollections.observableArrayList();
-        for(Program program:Database.programTable){
-            if(program.getProgramName().toLowerCase().contains(searchText.toLowerCase())){
-                Button btnModule = new Button("Module");
-                Button btnDelete = new Button("Delete");
-                programList.add(new ProgramTm(
-                        program.getProgramId(),
-                        program.getProgramName(),
-                        program.getProgramTeacher(),
-                        btnModule,
-                        program.getProgramCost(),
-                        btnDelete
-                ));
+        try{
+            ObservableList<ProgramTm> programDetails = fetchProgramDetails(searchText);
+            tblProgram.setItems(programDetails);
+        }catch (SQLException | ClassNotFoundException e){
+            e.printStackTrace();
+        }
+    }
 
-                btnDelete.setOnAction((ActionEvent event) -> {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete this program?", ButtonType.YES, ButtonType.NO);
-                    alert.showAndWait();
-                    if (alert.getResult() == ButtonType.YES) {
-                        Database.programTable.remove(program);
-                        setProgramTableData(searchText);
-                    }
-                });
+    private ObservableList<ProgramTm> fetchProgramDetails(String searchText) throws SQLException, ClassNotFoundException {
+        ObservableList<ProgramTm> programDetails = FXCollections.observableArrayList();
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("SELECT p.id, p.name, p.cost, t.id, t.name FROM program p INNER JOIN teacher t ON t.id=p.teacher_id WHERE p.name LIKE ?");
+        ps.setString(1, "%"+searchText+"%");
+        ResultSet rs = ps.executeQuery();
 
-                btnModule.setOnAction((ActionEvent event) -> {
+        String programIdModule = "";
+        while(rs.next()){
+            programIdModule = rs.getString(1);
+            Button btnModule = new Button("Module");
+            Button btnDelete = new Button("Delete");
+            ProgramTm tm = new ProgramTm(
+                    rs.getString(1),
+                    rs.getString(2),
+                    rs.getString(4)+"-"+rs.getString(5),
+                    btnModule,
+                    rs.getDouble(3),
+                    btnDelete
+            );
+            programDetails.add(tm);
+            btnDelete.setOnAction(event -> {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION,"Do you want to delete this program?", ButtonType.YES, ButtonType.NO);
+                alert.showAndWait();
+                if(alert.getResult() == ButtonType.YES){
                     try {
-                        Stage stage = new Stage();
-                        stage.setScene(new Scene(FXMLLoader.load(getClass().getResource("/com/pathum/lms/view/ModulePopup.fxml"))));
-                        stage.show();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        boolean isDeleted = deleteProgram(tm.getProgramId());
+                        if(isDeleted){
+                            setProgramId();
+                            setProgramTableData(searchText);
+                            new Alert(Alert.AlertType.INFORMATION,"Program deleted successfully").show();
+                        }
+                    } catch (SQLException | ClassNotFoundException e) {
+                        e.printStackTrace();
                     }
-                });
+                }
+            });
+            programIdForModules = programIdModule;
+            btnModule.setOnAction((ActionEvent event) -> {
+                try{
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/pathum/lms/view/ModulePopup.fxml"));
+                    Parent load = loader.load();
+                    Stage stage = new Stage();
+                    stage.setScene(new Scene(load));
+                    stage.setTitle("Module List");
+                    stage.show();
+
+                }catch (IOException e){
+                    throw new RuntimeException();
+                }
+            });
+        }
+        return programDetails;
+    }
+
+    private boolean deleteProgram(String programId) throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        connection.setAutoCommit(false);
+        try {
+            try (PreparedStatement ps = connection.prepareStatement("DELETE FROM module_has_program WHERE program_id=?")){
+                ps.setString(1, programId);
+                ps.executeUpdate();
+            }
+            boolean programDeleted;
+            try (PreparedStatement ps2 = connection.prepareStatement("DELETE FROM program WHERE id=?")){
+                ps2.setString(1, programId);
+                programDeleted = ps2.executeUpdate() > 0;
+            }
+            try (PreparedStatement ps3 = connection.prepareStatement("DELETE FROM module WHERE id NOT IN (SELECT DISTINCT module_id FROM module_has_program)")){
+                ps3.executeUpdate();
+            }
+            if(programDeleted){
+                connection.commit();
+                return true;
+            }else{
+                connection.rollback();
+                return false;
             }
 
+        }catch (Exception e){
+            connection.rollback();
+            e.printStackTrace();
+            return false;
+        }finally {
+            connection.setAutoCommit(true);
         }
-        tblProgram.setItems(programList);
     }
 
     private void setModuleTableData() {
@@ -144,26 +205,55 @@ public class ProgramManagementFormController {
     }
 
     private void setTeachers() {
-        ObservableList<String> teachers = FXCollections.observableArrayList();
-        for(Teacher t:Database.teacherTable){
-            teachers.add(t.getId().trim()+" - "+t.getName());
+        try{
+            ArrayList<String> teacherslist = fetchTeachers();
+            ObservableList<String> teachers = FXCollections.observableArrayList();
+            for(String teacher:teacherslist){
+                teachers.add(teacher);
+            }
+            cmbTeacher.setItems(teachers);
+        }catch(SQLException | ClassNotFoundException e){
+            e.printStackTrace();
         }
-        cmbTeacher.setItems(teachers);
+    }
+
+    private ArrayList<String> fetchTeachers() throws SQLException, ClassNotFoundException {
+        ArrayList<String> teachersList = new ArrayList<>();
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM teacher");
+        ResultSet rs = ps.executeQuery();
+        while(rs.next()){
+            teachersList.add(rs.getString("id")+" - "+rs.getString("name"));
+        }
+        return teachersList;
     }
 
     private void setProgramId() {
-        if (!Database.programTable.isEmpty()) {
-            Program program = Database.programTable.get(Database.programTable.size()-1);
-            String programId = program.getProgramId();
-            String[] splitedProgramId = programId.split("-");
-            String lastCharacter = splitedProgramId[1];
-            int lastDigit = Integer.parseInt(lastCharacter);
-            lastDigit++;
-            String generatedId = "P-"+lastDigit;
-            txtProgramId.setText(generatedId);
-        }else{
-            txtProgramId.setText("P-1");
+        try {
+            String lastProgramId = getLastProgramId();
+            if (lastProgramId != null) {
+                String[] splitedProgramId = lastProgramId.split("-");
+                String lastCharacter = splitedProgramId[1];
+                int lastDigit = Integer.parseInt(lastCharacter);
+                lastDigit++;
+                String generatedId = "P-"+lastDigit;
+                txtProgramId.setText(generatedId);
+            }else{
+                txtProgramId.setText("P-1");
+            }
+        }catch (SQLException | ClassNotFoundException e){
+            e.printStackTrace();
         }
+    }
+
+    private String getLastProgramId() throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("SELECT id FROM program ORDER BY CAST(SUBSTRING(id,3)AS UNSIGNED) DESC LIMIT 1");
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getString(1);
+        }
+        return null;
     }
 
     public void newProgramOnAction(ActionEvent actionEvent) {
@@ -181,32 +271,104 @@ public class ProgramManagementFormController {
         for (int i = 0; i < moduleList.size(); i++) {
             selectedModules[i] = moduleList.get(i).getModuleName();
         }
-
-        if(btnSave.getText().equals("Save")){
-            Database.programTable.add(new Program(
-                    txtProgramId.getText(),
-                    txtProgramName.getText(),
-                    Double.parseDouble(txtProgramCost.getText()),
-                    cmbTeacher.getValue(),
-                    selectedModules
-            ));
-            setProgramId();
-            clearFields();
-            setProgramTableData(searchText);
-            new Alert(Alert.AlertType.INFORMATION, "Program Saved").show();
-        }else {
-            Optional<Program> selectedProgram = Database.programTable.stream().filter(e->e.getProgramId().equals(txtProgramId.getText())).findFirst();
-            if(selectedProgram.isPresent()){
-                selectedProgram.get().setProgramName(txtProgramName.getText());
-                selectedProgram.get().setProgramCost(Double.parseDouble(txtProgramCost.getText()));
-                selectedProgram.get().setProgramTeacher(cmbTeacher.getValue());
-                selectedProgram.get().setProgramModules(selectedModules);
-                new Alert(Alert.AlertType.INFORMATION, "Program Updated").show();
+        try {
+            if(btnSave.getText().equals("Save")){
+                boolean isSaved = saveProgram(new Program(
+                        txtProgramId.getText(),
+                        txtProgramName.getText(),
+                        Double.parseDouble(txtProgramCost.getText()),
+                        splitedTeacherId(cmbTeacher.getValue()),
+                        selectedModules
+                ));
+                setProgramId();
                 clearFields();
                 setProgramTableData(searchText);
-                setProgramId();
-                btnSave.setText("Save");
+                new Alert(Alert.AlertType.INFORMATION, "Program Saved").show();
+            }else {
+                boolean isUpdated = updateProgram(new Program(
+                        txtProgramId.getText(),
+                        txtProgramName.getText(),
+                        Double.parseDouble(txtProgramCost.getText()),
+                        splitedTeacherId(cmbTeacher.getValue()),
+                        selectedModules
+                ));
+
+                if(isUpdated){
+                    new Alert(Alert.AlertType.INFORMATION, "Program Updated").show();
+                    clearFields();
+                    setProgramTableData(searchText);
+                    setProgramId();
+                    btnSave.setText("Save");
+                }
             }
+        }catch (ClassNotFoundException | SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    private boolean updateProgram(Program program) throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        PreparedStatement ps = connection.prepareStatement("UPDATE program SET name = ?, cost=?, teacher_id=? WHERE id = ?");
+        ps.setString(1, program.getProgramName());
+        ps.setDouble(2, program.getProgramCost());
+        ps.setString(3, splitedTeacherId(program.getProgramTeacher()));
+        ps.setString(4, program.getProgramId());
+
+        return ps.executeUpdate() > 0;
+    }
+
+    private String splitedTeacherId(String value) {
+        String[] splitedTeacherId = value.split("-");
+        return splitedTeacherId[0]+"-"+splitedTeacherId[1];
+    }
+
+    private boolean saveProgram(Program program) throws SQLException, ClassNotFoundException {
+        Connection connection = DbConnection.getDbConnection().getConnection();
+        connection.setAutoCommit(false);
+        try{
+            PreparedStatement ps = connection.prepareStatement("INSERT INTO program(id, name, cost, teacher_id) VALUES (?,?,?,?)");
+            ps.setString(1, program.getProgramId());
+            ps.setString(2, program.getProgramName());
+            ps.setDouble(3, program.getProgramCost());
+            ps.setString(4, program.getProgramTeacher());
+
+            if(ps.executeUpdate()==0){
+                connection.rollback();
+                return false;
+            }
+
+            for(String module:program.getProgramModules()){
+                try(PreparedStatement ps2 = connection.prepareStatement("INSERT INTO module(name) VALUES (?)", Statement.RETURN_GENERATED_KEYS)){
+                    ps2.setString(1, module);
+                    if(ps2.executeUpdate()==0){
+                        connection.rollback();
+                        return false;
+                    }
+                    try (ResultSet rs = ps2.getGeneratedKeys()) {
+                        if(rs.next()){
+                            int moduleId = rs.getInt(1);
+                            try (PreparedStatement ps3=connection.prepareStatement("INSERT INTO module_has_program(module_id,program_id) VALUES (?,?)")){
+                                ps3.setInt(1, moduleId);
+                                ps3.setString(2, program.getProgramId());
+                                if(ps3.executeUpdate()==0){
+                                    connection.rollback();
+                                    return false;
+                                }
+                            }
+                        }else{
+                            connection.rollback();
+                            return false;
+                        }
+                    }
+                }
+            }
+            connection.commit();
+            return true;
+        }catch (Exception e){
+            connection.rollback();
+            throw e;
+        }finally {
+            connection.setAutoCommit(true);
         }
     }
 
