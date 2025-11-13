@@ -2,8 +2,13 @@ package com.pathum.lms.controller;
 
 import com.pathum.lms.DB.Database;
 import com.pathum.lms.DB.DbConnection;
+import com.pathum.lms.bo.BoFactory;
+import com.pathum.lms.bo.custom.UserBo;
+import com.pathum.lms.bo.custom.impl.UserBoImpl;
+import com.pathum.lms.dto.request.RequestUserDto;
 import com.pathum.lms.env.StaticResource;
 import com.pathum.lms.model.User;
+import com.pathum.lms.utils.BoType;
 import com.pathum.lms.utils.security.PasswordManager;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -18,9 +23,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class SignUpFormController {
@@ -31,6 +33,7 @@ public class SignUpFormController {
     public PasswordField txtPassword;
     public TextField txtEmail;
     public TextField txtAge;
+    UserBoImpl user = BoFactory.getInstance().getBo(BoType.USER);
 
     public void initialize() {
         setStaticData();
@@ -48,32 +51,26 @@ public class SignUpFormController {
     public void signUpOnAction(ActionEvent actionEvent) throws IOException {
 
         String fullName = txtFullName.getText();
-        String password = new PasswordManager().encodePassword(txtPassword.getText());
+        String password = txtPassword.getText();
         String email = txtEmail.getText();
         int age = Integer.parseInt(txtAge.getText());
 
-        User user = new User(fullName, email, password, age);
-
-        try{
-            signUp(user);
-            new Alert(Alert.AlertType.INFORMATION, "Sign up successful!").show();
-            setUi("LoginForm");
-        }catch(ClassNotFoundException | SQLException e){
-            e.printStackTrace();
+        try {
+            boolean isSaved = user.registerUser(new RequestUserDto(
+               email,
+               fullName,
+               age,
+               password
+            ));
+            if (isSaved) {
+                new Alert(Alert.AlertType.INFORMATION, "Sign up successful!").show();
+                setUi("LoginForm");
+            }else {
+                new Alert(Alert.AlertType.ERROR, "Something went wrong!").show();
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
-    }
-
-    private boolean signUp(User user) throws ClassNotFoundException, SQLException {
-        Connection connection = DbConnection.getDbConnection().getConnection();
-
-        String sql = "INSERT INTO user VALUES (?,?,?,?)";
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ps.setString(1, user.getEmail());
-        ps.setString(2, user.getFullName());
-        ps.setInt(3, user.getAge());
-        ps.setString(4, user.getPassword());
-
-        return ps.executeUpdate() > 0;
     }
 
     public void alreadyHaveAnAccountOnAction(ActionEvent actionEvent) throws IOException {

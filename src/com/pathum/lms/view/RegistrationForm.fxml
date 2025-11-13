@@ -12,7 +12,6 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-
 <AnchorPane fx:id="context" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pathum.lms.controller.RegistrationFormController">
    <children>
       <Label layoutX="209.0" layoutY="16.0" text="Entroll with Programs">
@@ -36,8 +35,8 @@
             <Font name="System Bold" size="14.0" />
          </font>
       </Button>
-      <TextField fx:id="txtStudentId" editable="false" layoutX="202.0" layoutY="118.0" prefHeight="26.0" prefWidth="87.0" promptText="Student ID" />
-      <ComboBox fx:id="cmbIntake" layoutX="149.0" layoutY="73.0" prefHeight="26.0" prefWidth="139.0" promptText="Intake" />
+      <TextField fx:id="txtStudentId" editable="false" layoutX="172.0" layoutY="72.0" prefHeight="26.0" prefWidth="123.0" promptText="Student ID" />
+      <ComboBox fx:id="cmbIntake" layoutX="16.0" layoutY="72.0" prefHeight="26.0" prefWidth="139.0" promptText="Intake" />
       <RadioButton fx:id="rbtnPaid" layoutX="457.0" layoutY="79.0" mnemonicParsing="false" text="Paid">
          <toggleGroup>
             <ToggleGroup fx:id="rbtnPayment" />
@@ -50,16 +49,14 @@
          </font>
       </Label>
       <ComboBox fx:id="cmbStudent" layoutX="302.0" layoutY="118.0" prefHeight="26.0" prefWidth="139.0" promptText="Student" />
-      <TextField fx:id="txtSearch" layoutX="16.0" layoutY="118.0" prefHeight="26.0" prefWidth="174.0" promptText="Search Here" />
+      <TextField fx:id="txtSearch" layoutX="16.0" layoutY="118.0" prefHeight="26.0" prefWidth="270.0" promptText="Search Here" />
       <TableView fx:id="tblEntroll" layoutX="16.0" layoutY="166.0" prefHeight="218.0" prefWidth="566.0">
         <columns>
-            <TableColumn fx:id="colEntrollId" prefWidth="56.800048828125" text="Id" />
-          <TableColumn fx:id="colStudent" prefWidth="160.7999267578125" text="Student" />
-          <TableColumn fx:id="colIntake" prefWidth="151.2000732421875" text="Intake" />
-            <TableColumn fx:id="colPaymentState" prefWidth="104.79998779296875" text="Payment State" />
-            <TableColumn fx:id="colAction" minWidth="0.0" prefWidth="91.99993896484375" text="Action" />
+          <TableColumn fx:id="colStudent" prefWidth="153.5999755859375" text="Student" />
+          <TableColumn fx:id="colIntake" prefWidth="159.20001220703125" text="Intake" />
+            <TableColumn fx:id="colPaymentState" prefWidth="127.199951171875" text="Payment State" />
+            <TableColumn fx:id="colAction" minWidth="0.0" prefWidth="124.800048828125" text="Action" />
         </columns>
       </TableView>
-      <TextField fx:id="txtEntrollId" editable="false" layoutX="14.0" layoutY="73.0" prefHeight="26.0" prefWidth="112.0" promptText="Entroll ID" />
    </children>
 </AnchorPane>
