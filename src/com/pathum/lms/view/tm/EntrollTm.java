@@ -3,7 +3,6 @@ package com.pathum.lms.view.tm;
 import javafx.scene.control.Button;
 
 public class EntrollTm {
-    private String entrollId;
     private String student;
     private String intake;
     private String paymentState;
@@ -12,8 +11,7 @@ public class EntrollTm {
     public EntrollTm() {
     }
 
-    public EntrollTm(String entrollId, String student, String intake, String paymentState, Button btn) {
-        this.entrollId = entrollId;
+    public EntrollTm(String student, String intake, String paymentState, Button btn) {
         this.student = student;
         this.intake = intake;
         this.paymentState = paymentState;
@@ -50,13 +48,5 @@ public class EntrollTm {
 
     public void setBtn(Button btn) {
         this.btn = btn;
-    }
-
-    public String getEntrollId() {
-        return entrollId;
-    }
-
-    public void setEntrollId(String entrollId) {
-        this.entrollId = entrollId;
     }
 }

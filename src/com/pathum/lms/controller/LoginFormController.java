@@ -2,8 +2,12 @@ package com.pathum.lms.controller;
 
 import com.pathum.lms.DB.Database;
 import com.pathum.lms.DB.DbConnection;
+import com.pathum.lms.bo.BoFactory;
+import com.pathum.lms.bo.custom.impl.UserBoImpl;
+import com.pathum.lms.dto.response.ResponseUserDto;
 import com.pathum.lms.env.StaticResource;
 import com.pathum.lms.model.User;
+import com.pathum.lms.utils.BoType;
 import com.pathum.lms.utils.security.PasswordManager;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -27,6 +31,7 @@ public class LoginFormController {
     public Label lblVersion;
     public TextField txtEmail;
     public PasswordField txtPassword;
+    UserBoImpl user = BoFactory.getInstance().getBo(BoType.USER);
 
     public void initialize() {
         setStaticData();
@@ -42,39 +47,21 @@ public class LoginFormController {
         String password = txtPassword.getText();
 
         try{
-            boolean login = loginToSystem(email, password);
-            if(login){
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/pathum/lms/view/DashboardForm.fxml"));
-                Parent load = loader.load();
-                DashboardFormController dashboardController = loader.getController();
-                dashboardController.setData(email);
-                Stage stage = (Stage) context.getScene().getWindow();
-                stage.setScene(new Scene(load));
-                new Alert(Alert.AlertType.INFORMATION,"Welcome").show();
-            }else{
-                new Alert(Alert.AlertType.ERROR,"Invalid User Credentials").show();
+            ResponseUserDto loginState = user.loginUser(email, password);
+            if(loginState!=null){
+                if(loginState.getStatusCode()==200){
+                    new Alert(Alert.AlertType.INFORMATION,loginState.getMessage()).show();
+                    setUi("DashboardForm");
+                }else if(loginState.getStatusCode()==401){
+                    new Alert(Alert.AlertType.INFORMATION,loginState.getMessage()).show();
+                } else if (loginState.getStatusCode()==404) {
+                    new Alert(Alert.AlertType.INFORMATION,loginState.getMessage()).show();
+                }
+            }else {
+                new Alert(Alert.AlertType.INFORMATION,"Something went wrong!").show();
             }
         }catch (ClassNotFoundException | SQLException e){
             e.printStackTrace();
-        }
-    }
-
-    private boolean loginToSystem(String email, String password) throws ClassNotFoundException, SQLException {
-        Connection connection = DbConnection.getDbConnection().getConnection();
-
-        String sql = "SELECT email, password FROM user WHERE email = ?";
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ps.setString(1, email);
-        ResultSet rs = ps.executeQuery();
-
-        if (rs.next()) {
-            if(new PasswordManager().checkPassword(password, rs.getString("password"))) {
-                return true;
-            }else {
-                return false;
-            }
-        }else {
-            return false;
         }
     }
 

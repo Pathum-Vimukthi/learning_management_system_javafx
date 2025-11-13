@@ -1,7 +1,6 @@
 package com.pathum.lms.model;
 
 public class Entroll {
-    private String entrollId;
     private String student;
     private String intake;
     private boolean isPaid;
@@ -9,8 +8,7 @@ public class Entroll {
     public Entroll() {
     }
 
-    public Entroll(String entrollId, String student, String intake, boolean isPaid) {
-        this.entrollId = entrollId;
+    public Entroll(String student, String intake, boolean isPaid) {
         this.student = student;
         this.intake = intake;
         this.isPaid = isPaid;
@@ -38,13 +36,5 @@ public class Entroll {
 
     public void setPaid(boolean paid) {
         isPaid = paid;
-    }
-
-    public String getEntrollId() {
-        return entrollId;
-    }
-
-    public void setEntrollId(String entrollId) {
-        this.entrollId = entrollId;
     }
 }
