@@ -2,7 +2,12 @@ package com.pathum.lms.controller;
 
 import com.pathum.lms.DB.Database;
 import com.pathum.lms.DB.DbConnection;
+import com.pathum.lms.bo.BoFactory;
+import com.pathum.lms.bo.custom.impl.StudentBoImpl;
+import com.pathum.lms.dto.request.RequestStudentDto;
+import com.pathum.lms.dto.response.ResponseStudentDto;
 import com.pathum.lms.model.Student;
+import com.pathum.lms.utils.BoType;
 import com.pathum.lms.view.tm.StudentTm;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -26,6 +31,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 public class StudentManagementFormController {
@@ -44,6 +50,7 @@ public class StudentManagementFormController {
     public TableColumn<StudentTm, Button> colAction;
     String searchText = "";
     String userEmail;
+    StudentBoImpl studentBo = BoFactory.getInstance().getBo(BoType.STUDENT);
 
     public void initialize() {
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -76,67 +83,40 @@ public class StudentManagementFormController {
 
     private void setTableData(String searchText) {
         try{
-            ArrayList<Student> studentsList = fetchStudentsData(searchText);
+            List<ResponseStudentDto> studentDtos = studentBo.getStudents(searchText);
             ObservableList<StudentTm> studentTms = FXCollections.observableArrayList();
-
-            for(Student student:studentsList){
+            for (ResponseStudentDto studentDto : studentDtos) {
                 Button btn = new Button("Delete");
-                StudentTm studentTm = new StudentTm(
-                        student.getStudentID(),
-                        student.getStudentName(),
-                        student.getStudentAddress(),
-                        new SimpleDateFormat("yyyy-MM-dd").format(student.getDob()),
+                studentTms.add(new StudentTm(
+                        studentDto.getId(),
+                        studentDto.getName(),
+                        studentDto.getAddress(),
+                        studentDto.getDob(),
                         btn
-                );
-                btn.setOnAction((ActionEvent event) -> {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete this student?", ButtonType.YES, ButtonType.NO);
-                        alert.showAndWait();
-                        if (alert.getResult() == ButtonType.YES) {
-                            try{
-                                boolean isDelete = deleteStudent(student);
-                                if(isDelete){
-                                    new Alert(Alert.AlertType.INFORMATION, "Student deleted successfully").show();
-                                    setTableData(searchText);
-                                    setStudentId();
-                                }
-                            }catch (SQLException | ClassNotFoundException e){
-                                e.printStackTrace();
+                ));
+                btn.setOnAction(event -> {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION,"Are you sure you want to delete this student?",ButtonType.YES,ButtonType.NO);
+                    alert.setTitle("Confirmation");
+                    alert.setHeaderText("Delete Student");
+                    alert.showAndWait();
+                    if (alert.getResult() == ButtonType.YES) {
+                        try {
+                            boolean isDeleted = studentBo.deleteStudent(studentDto.getId());
+                            if (isDeleted) {
+                                new Alert(Alert.AlertType.INFORMATION,"Student Deleted").show();
+                                setTableData(searchText);
+                                setStudentId();
                             }
+                        } catch (SQLException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
                         }
-                    });
-                studentTms.add(studentTm);
+                    }
+                });
             }
             tblStudent.setItems(studentTms);
         }catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-    }
-
-    private boolean deleteStudent(Student student) throws SQLException, ClassNotFoundException {
-        Connection connection = DbConnection.getDbConnection().getConnection();
-        PreparedStatement ps = connection.prepareStatement("DELETE FROM student WHERE id = ?");
-        ps.setString(1, student.getStudentID());
-
-        return ps.executeUpdate()>0;
-    }
-
-    private ArrayList<Student> fetchStudentsData(String searchText) throws SQLException, ClassNotFoundException {
-        ArrayList<Student> studentsList = new ArrayList<>();
-
-        Connection connection = DbConnection.getDbConnection().getConnection();
-        PreparedStatement ps = connection.prepareStatement("SELECT * FROM student WHERE name LIKE ?");
-        ps.setString(1, "%" + searchText + "%");
-        ResultSet resultSet = ps.executeQuery();
-
-        while (resultSet.next()) {
-            studentsList.add(new Student(
-                    resultSet.getString(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getDate(4)
-            ));
-        }
-        return studentsList;
     }
 
     private void setStudentId() {
@@ -170,15 +150,14 @@ public class StudentManagementFormController {
     }
 
     public void saveOnAction(ActionEvent actionEvent) {
-        Student student = new Student(
-                txtStudentId.getText(),
-                txtStudentName.getText(),
-                txtAddress.getText(),
-                Date.from(dteDOB.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant())
-        );
         try{
             if(btnSave.getText().equals("Save")){
-                boolean isSaved = saveStudent(student, userEmail);
+                boolean isSaved = studentBo.saveStudent(new RequestStudentDto(
+                        txtStudentId.getText(),
+                        txtStudentName.getText(),
+                        txtAddress.getText(),
+                        Date.from(dteDOB.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant())
+                ));
                 if(isSaved){
                     setStudentId();
                     clearFields();
@@ -186,7 +165,12 @@ public class StudentManagementFormController {
                     setTableData(searchText);
                 }
             }else {
-                boolean isUpdated = updateStudent(student, userEmail);
+                boolean isUpdated = studentBo.updateStudent(new RequestStudentDto(
+                        txtStudentId.getText(),
+                        txtStudentName.getText(),
+                        txtAddress.getText(),
+                        Date.from(dteDOB.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant())
+                ));
                 if(isUpdated){
                     new Alert(Alert.AlertType.INFORMATION, "Student Updated!").show();
                     setStudentId();
@@ -208,18 +192,6 @@ public class StudentManagementFormController {
         ps.setObject(3, student.getDob());
         ps.setString(4, userEmail);
         ps.setString(5, student.getStudentID());
-
-        return ps.executeUpdate()>0;
-    }
-
-    private boolean saveStudent(Student student, String userEmail) throws SQLException, ClassNotFoundException {
-        Connection connection = DbConnection.getDbConnection().getConnection();
-        PreparedStatement ps = connection.prepareStatement("INSERT INTO student VALUES (?,?,?,?,?)");
-        ps.setString(1, student.getStudentID());
-        ps.setString(2, student.getStudentName());
-        ps.setString(3, student.getStudentAddress());
-        ps.setObject(4, student.getDob());
-        ps.setString(5, userEmail);
 
         return ps.executeUpdate()>0;
     }

@@ -1,5 +1,6 @@
 package com.pathum.lms.controller;
 
+import com.pathum.lms.env.Session;
 import com.pathum.lms.env.StaticResource;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -53,6 +54,7 @@ public class DashboardFormController {
 
     public void logoutOnAction(ActionEvent actionEvent) throws IOException {
         setUi("LoginForm");
+        Session.clear();
     }
 
     public void studentManageOnAction(ActionEvent actionEvent) throws IOException {
@@ -78,9 +80,5 @@ public class DashboardFormController {
 
     public void studentRegistrationOnAction(ActionEvent actionEvent) throws IOException {
         setUi("RegistrationForm");
-    }
-
-    public void setData(String userEmail) {
-        this.userEmail = userEmail;
     }
 }

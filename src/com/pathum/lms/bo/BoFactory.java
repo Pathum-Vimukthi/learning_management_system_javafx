@@ -1,5 +1,6 @@
 package com.pathum.lms.bo;
 
+import com.pathum.lms.bo.custom.impl.StudentBoImpl;
 import com.pathum.lms.bo.custom.impl.UserBoImpl;
 import com.pathum.lms.utils.BoType;
 
@@ -16,6 +17,8 @@ public class BoFactory {
         switch (boType) {
             case USER:
                 return (T) new UserBoImpl();
+            case STUDENT:
+                return (T) new StudentBoImpl();
             default:
                 return null;
         }
