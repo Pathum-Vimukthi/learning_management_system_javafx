@@ -6,6 +6,7 @@ import com.pathum.lms.dao.custom.impl.UserDaoImpl;
 import com.pathum.lms.dto.request.RequestUserDto;
 import com.pathum.lms.dto.response.ResponseUserDto;
 import com.pathum.lms.entity.User;
+import com.pathum.lms.env.Session;
 import com.pathum.lms.utils.DaoType;
 import com.pathum.lms.utils.security.PasswordManager;
 
@@ -32,6 +33,7 @@ public class UserBoImpl implements UserBo {
         User selectedUser = user.findByEmail(email);
         if(selectedUser != null) {
             if(new PasswordManager().checkPassword(password, selectedUser.getPassword())) {
+                Session.setEmail(selectedUser.getEmail());
                 return new ResponseUserDto(
                         selectedUser.getEmail(),
                         selectedUser.getFullName(),

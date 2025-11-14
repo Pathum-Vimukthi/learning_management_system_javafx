@@ -1,5 +1,7 @@
 package com.pathum.lms.dao;
 
+import com.pathum.lms.dao.custom.impl.EntrollDaoImpl;
+import com.pathum.lms.dao.custom.impl.StudentDaoImpl;
 import com.pathum.lms.dao.custom.impl.UserDaoImpl;
 import com.pathum.lms.utils.DaoType;
 
@@ -16,6 +18,10 @@ public class DaoFactory {
         switch (daoType) {
             case USER:
                 return (T) new UserDaoImpl();
+            case STUDENT:
+                return (T) new StudentDaoImpl();
+            case ENTROLL:
+                return (T) new EntrollDaoImpl();
             default:
                 return null;
         }
